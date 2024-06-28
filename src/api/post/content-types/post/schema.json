@@ -15,6 +15,10 @@
     "caption": {
       "type": "string"
     },
+    "slug": {
+      "type": "customField",
+      "customField": "plugin::field-nanoid.nanoid"
+    },
     "image": {
       "type": "media",
       "multiple": true,

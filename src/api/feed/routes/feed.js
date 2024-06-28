@@ -14,7 +14,9 @@ module.exports = {
       path: '/feed',
       handler: 'feed.getFeed',
       config: {
-     
+        auth: { required: true },
+        policies: [],
+        middlewares: [],
       },
 
     },

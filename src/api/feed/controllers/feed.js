@@ -1,70 +1,42 @@
 'use strict';
 
-module.exports = {
+const { createCoreController } = require('@strapi/strapi').factories;
+
+module.exports = createCoreController('api::post.post', ({ strapi }) => ({
   async getFeed(ctx) {
-    const userId = ctx.state.user.id;
+    const userId = ctx.state.user.id; // Asumiendo que el usuario está autenticado y su ID está en el estado
+  
+    console.log('User ID:', userId); // Log del ID de usuario
+  
+    try {
+      // Obtener los usuarios a los que sigue el usuario actual
+      const followingUsers = await strapi.db.query('api::follow.follow').findMany({
+        where: { follower: userId },
+        populate: ['following'],
+      });
+  
+  
+      const followingIds = followingUsers.map(follow => follow.following.id);
+  
+      if (followingIds.length === 0) {
+        return ctx.send([]);
+      }
+  
+      // Obtener los posts de los usuarios a los que sigue el usuario actual
+      const posts = await strapi.db.query('api::post.post').findMany({
+        where: { user: { $in: followingIds } },  // Usar "user" en lugar de "author"
+        populate: ['user','user.profile_picture','image','likes','comments'], // Populate the user field to include user data
+        orderBy: [{ createdAt: 'desc' }], // Ordenar los posts por fecha de cre
+      });
+  
+  
+      return ctx.send(posts);
+    } catch (error) {
+      console.log('Error:', error); // Log de error
+      ctx.throw(500, error);
+    }
+  }
+  
+  
 
-    // Obtener los usuarios seguidos por el usuario actual
-    const user = await strapi.query('plugin::users-permissions.user').findOne({
-      where: { id: userId },
-      populate: ['following'],
-    });
-
-    // {
-    //   id: 2,
-    //   username: 'Dvegamed@gmail.com',
-    //   email: 'dvegamed@gmail.com',
-    //   provider: 'local',
-    //   password: '$2a$10$e8QeqLOQS/2/TvwexMaKV..Pa9pOFC.RNjbszu40zZOs.HiGGMBMm',
-    //   resetPasswordToken: null,
-    //   confirmationToken: null,
-    //   confirmed: true,
-    //   blocked: false,
-    //   createdAt: '2024-05-11T17:15:01.349Z',
-    //   updatedAt: '2024-05-17T22:18:12.370Z',
-    //   name: 'Diego',
-    //   lastName: 'Vega',
-    //   rut: '184694565',
-    //   birthdate: '25/05/1993',
-    //   bio: null,
-    //   is_private: false,
-    //   following: {
-    //     id: 3,
-    //     username: 'sakura',
-    //     email: 'sakua@sakura.cl',
-    //     provider: 'local',
-    //     password: '$2a$10$awqQR16Nlp5WZjUs9NsHoObqiOMf86afdrsSnfQSmyAyMaY.ZhKeS',
-    //     resetPasswordToken: null,
-    //     confirmationToken: null,
-    //     confirmed: true,
-    //     blocked: false,
-    //     createdAt: '2024-05-17T22:17:31.748Z',
-    //     updatedAt: '2024-05-17T22:17:31.748Z',
-    //     name: 'Sakura',
-    //     lastName: '__',
-    //     rut: null,
-    //     birthdate: null,
-    //     bio: null,
-    //     is_private: false
-    //   }
-    // }
-
-    console.log(user.following)
-    const followingIds = Object.entries(user.following).map((user) => console.log(user));
-    
-
-    const posts = await strapi.query('api::post.post').findMany({
-      where: {
-        user: {
-          id: { $in: followingIds },
-        },
-      },
-      populate: ['user', 'image', 'likes', 'comments'],
-      // sort: { createdAt: 'desc' },
-    });
-
-    return posts;
-   
-
-  },
-};
+}));

@@ -31,6 +31,16 @@ const myExtraRoutes = [
       middlewares: [],
     },
   },
+  {
+    method: 'GET',
+    path: '/posts/feed',
+    handler: 'feed.get',
+    config: {
+      auth: { required: true },
+      policies: [],
+      middlewares: [],
+    },
+  },
 ];
 
 module.exports = customRouter(defaultRouter, myExtraRoutes);
